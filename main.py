@@ -1,7 +1,24 @@
 from fastapi import FastAPI
+from pydantic import BaseModel
+from typing import Optional
 import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
+
+app = FastAPI()
+
+# =========================
+# DATABASE CONNECTION
+# =========================
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+def get_conn():
+    return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+
+# =========================
+# MODELS
+# =========================
 
 class LeaveRecord(BaseModel):
     name: str
@@ -25,7 +42,33 @@ class RosterRecord(BaseModel):
     previous_unit: str
     authority: str
     remarks: str
-    @app.get("/leave")
+
+# =========================
+# ROOT CHECK
+# =========================
+
+@app.get("/")
+def home():
+    return {"message": "PMMA API with DB is LIVE"}
+
+@app.get("/test-db")
+def test_db():
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute("SELECT 1")
+    result = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    return {"db_status": "connected", "result": result}
+
+# =========================
+# LEAVE DATA
+# =========================
+
+@app.get("/leave")
 def get_leave():
     conn = get_conn()
     cur = conn.cursor()
@@ -37,7 +80,9 @@ def get_leave():
     conn.close()
 
     return data
-    @app.post("/leave")
+
+
+@app.post("/leave")
 def upload_leave(record: LeaveRecord):
 
     conn = get_conn()
@@ -74,7 +119,12 @@ def upload_leave(record: LeaveRecord):
     conn.close()
 
     return {"status": "success"}
-    @app.get("/roster")
+
+# =========================
+# ROSTER DATA
+# =========================
+
+@app.get("/roster")
 def get_roster():
     conn = get_conn()
     cur = conn.cursor()
@@ -86,7 +136,9 @@ def get_roster():
     conn.close()
 
     return data
-    @app.post("/roster")
+
+
+@app.post("/roster")
 def upload_roster(record: RosterRecord):
 
     conn = get_conn()
@@ -117,27 +169,3 @@ def upload_roster(record: RosterRecord):
     conn.close()
 
     return {"status": "success"}
-
-app = FastAPI()
-
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-def get_conn():
-    return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
-
-@app.get("/")
-def home():
-    return {"message": "PMMA API with DB is LIVE"}
-
-@app.get("/test-db")
-def test_db():
-    conn = get_conn()
-    cur = conn.cursor()
-
-    cur.execute("SELECT 1")
-    result = cur.fetchone()
-
-    cur.close()
-    conn.close()
-
-    return {"db_status": "connected", "result": result}
