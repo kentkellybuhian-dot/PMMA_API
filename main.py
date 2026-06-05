@@ -4,7 +4,7 @@ from typing import Optional
 import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from fastapi.responses import JSONResponse
+import json
 
 app = FastAPI()
 
@@ -16,6 +16,17 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_conn():
     return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+
+# =========================
+# SAFE JSON CLEANER
+# =========================
+
+def clean_data(data):
+    """
+    Converts all PostgreSQL/python types into JSON-safe format
+    (handles date, datetime, Decimal, etc.)
+    """
+    return json.loads(json.dumps(data, default=str))
 
 # =========================
 # MODELS
@@ -50,7 +61,7 @@ class RosterRecord(BaseModel):
 
 @app.get("/")
 def home():
-    return {"message": "PMMA API with DB is LIVE"}
+    return {"message": "PMMA API is LIVE"}
 
 @app.get("/test-db")
 def test_db():
@@ -63,7 +74,7 @@ def test_db():
     cur.close()
     conn.close()
 
-    return {"db_status": "connected", "result": result}
+    return clean_data({"db_status": "connected", "result": result})
 
 # =========================
 # LEAVE DATA
@@ -80,7 +91,7 @@ def get_leave():
     cur.close()
     conn.close()
 
-    return JSONResponse(content=data)
+    return clean_data(data)
 
 
 @app.post("/leave")
@@ -130,13 +141,13 @@ def get_roster():
     conn = get_conn()
     cur = conn.cursor()
 
-    cur.execute("SELECT * FROM roster_data")
+    cur.execute("SELECT * FROM roster_data ORDER BY id")
     data = cur.fetchall()
 
     cur.close()
     conn.close()
 
-    return JSONResponse(content=data)
+    return clean_data(data)
 
 
 @app.post("/roster")
