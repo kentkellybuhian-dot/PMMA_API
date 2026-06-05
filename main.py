@@ -144,29 +144,29 @@ def upload_roster(record: RosterRecord):
     conn = get_conn()
     cur = conn.cursor()
 
-  cur.execute("""
-    INSERT INTO roster_data (
-        name, date_assigned, date_relieved,
-        unit_assigned, previous_unit,
-        authority, remarks
-    )
-    VALUES (%s,%s,%s,%s,%s,%s,%s)
-    ON CONFLICT (name, date_assigned)
-    DO UPDATE SET
-        date_relieved = EXCLUDED.date_relieved,
-        unit_assigned = EXCLUDED.unit_assigned,
-        previous_unit = EXCLUDED.previous_unit,
-        authority = EXCLUDED.authority,
-        remarks = EXCLUDED.remarks
-""", (
-    record.name,
-    record.date_assigned,
-    None if record.date_relieved == "" else record.date_relieved,
-    record.unit_assigned,
-    record.previous_unit,
-    record.authority,
-    record.remarks
-))
+    cur.execute("""
+        INSERT INTO roster_data (
+            name, date_assigned, date_relieved,
+            unit_assigned, previous_unit,
+            authority, remarks
+        )
+        VALUES (%s,%s,%s,%s,%s,%s,%s)
+        ON CONFLICT (name, date_assigned)
+        DO UPDATE SET
+            date_relieved = EXCLUDED.date_relieved,
+            unit_assigned = EXCLUDED.unit_assigned,
+            previous_unit = EXCLUDED.previous_unit,
+            authority = EXCLUDED.authority,
+            remarks = EXCLUDED.remarks
+    """, (
+        record.name,
+        record.date_assigned,
+        None if record.date_relieved == "" else record.date_relieved,
+        record.unit_assigned,
+        record.previous_unit,
+        record.authority,
+        record.remarks
+    ))
 
     conn.commit()
     cur.close()
