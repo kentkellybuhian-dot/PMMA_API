@@ -5,6 +5,9 @@ import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import json
+import threading
+import time
+import requests
 
 app = FastAPI()
 
@@ -18,13 +21,12 @@ def get_conn():
     return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
 # =========================
-# VBA SAFE CLEANER
+# VBA SAFE CLEANER (FAST + STABLE)
 # =========================
 
 def vba_safe(data):
-
     if isinstance(data, list):
-        return [vba_safe(item) for item in data]
+        return [vba_safe(i) for i in data]
 
     if isinstance(data, dict):
         return {k: vba_safe(v) for k, v in data.items()}
@@ -33,6 +35,26 @@ def vba_safe(data):
         return ""
 
     return str(data)
+
+# =========================
+# KEEP ALIVE SYSTEM (ANTI-SLEEP CORE FIX)
+# =========================
+
+BASE_URL = "https://pmma-api-8lsd.onrender.com"
+
+def keep_alive():
+    while True:
+        try:
+            requests.get(BASE_URL + "/ping", timeout=10)
+        except:
+            pass
+        time.sleep(300)  # every 5 minutes
+
+@app.on_event("startup")
+def startup_event():
+    t = threading.Thread(target=keep_alive)
+    t.daemon = True
+    t.start()
 
 # =========================
 # MODELS
@@ -62,28 +84,29 @@ class RosterRecord(BaseModel):
     remarks: str
 
 # =========================
-# ROOT
+# CORE ENDPOINTS
 # =========================
 
 @app.get("/")
 def home():
-    return vba_safe({"message": "PMMA API is LIVE (VBA SAFE MODE)"})
+    return vba_safe({"message": "PMMA API LIVE - INSTANT MODE"})
+
+@app.get("/ping")
+def ping():
+    return {"status": "alive"}
 
 @app.get("/test-db")
 def test_db():
     conn = get_conn()
     cur = conn.cursor()
-
     cur.execute("SELECT 1")
     result = cur.fetchone()
-
     cur.close()
     conn.close()
-
-    return vba_safe({"db_status": "connected", "result": result})
+    return vba_safe(result)
 
 # =========================
-# LEAVE DATA (FIXED)
+# LEAVE DATA (OPTIMIZED)
 # =========================
 
 @app.get("/leave")
@@ -97,7 +120,7 @@ def get_leave():
                region, unit_assignment, processed_by
         FROM leave_data
         ORDER BY id DESC
-        LIMIT 5000
+        LIMIT 500
     """)
 
     data = cur.fetchall()
@@ -150,10 +173,10 @@ def upload_leave(record: LeaveRecord):
     cur.close()
     conn.close()
 
-    return vba_safe({"status": "success", "module": "leave"})
+    return {"status": "success", "module": "leave"}
 
 # =========================
-# ROSTER DATA
+# ROSTER DATA (OPTIMIZED)
 # =========================
 
 @app.get("/roster")
@@ -167,7 +190,7 @@ def get_roster():
                authority, remarks
         FROM roster_data
         ORDER BY id DESC
-        LIMIT 5000
+        LIMIT 500
     """)
 
     data = cur.fetchall()
@@ -211,4 +234,4 @@ def upload_roster(record: RosterRecord):
     cur.close()
     conn.close()
 
-    return vba_safe({"status": "success", "module": "roster"})
+    return {"status": "success", "module": "roster"}
