@@ -87,7 +87,7 @@ def get_leave():
                region, unit_assignment, processed_by
         FROM leave_data
         ORDER BY id DESC
-        LIMIT 5000
+        LIMIT 10
     """)
 
     data = cur.fetchall()
@@ -157,7 +157,7 @@ def get_roster():
                authority, remarks
         FROM roster_data
         ORDER BY id DESC
-        LIMIT 5000
+        LIMIT 10
     """)
 
     data = cur.fetchall()
