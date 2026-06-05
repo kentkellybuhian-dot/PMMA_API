@@ -129,7 +129,7 @@ def get_roster():
     conn = get_conn()
     cur = conn.cursor()
 
-    cur.execute("SELECT * FROM roster_data ORDER BY id")
+    cur.execute("SELECT * FROM roster_data")
     data = cur.fetchall()
 
     cur.close()
