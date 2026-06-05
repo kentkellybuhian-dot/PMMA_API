@@ -4,6 +4,7 @@ from typing import Optional
 import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
@@ -79,7 +80,7 @@ def get_leave():
     cur.close()
     conn.close()
 
-    return data
+    return JSONResponse(content=data)
 
 
 @app.post("/leave")
@@ -135,7 +136,7 @@ def get_roster():
     cur.close()
     conn.close()
 
-    return data
+    return JSONResponse(content=data)
 
 
 @app.post("/roster")
