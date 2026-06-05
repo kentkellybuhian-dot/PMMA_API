@@ -87,7 +87,10 @@ def get_leave():
     conn = get_conn()
     cur = conn.cursor()
 
-    cur.execute("SELECT * FROM leave_data ORDER BY id")
+    cur.execute("SELECT * SELECT id, name, leave_type, start_date, end_date, entry_id 
+FROM leave_data
+ORDER BY id DESC
+LIMIT 5000")
     data = cur.fetchall()
 
     cur.close()
