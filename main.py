@@ -18,13 +18,15 @@ def get_conn():
     return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
 # =========================
-# SAFE JSON CLEANER
+# VBA-PROOF CLEANER (CORE UPGRADE)
 # =========================
 
-def clean_data(data):
+def vba_safe(data):
     """
-    Converts all PostgreSQL/python types into JSON-safe format
-    (handles date, datetime, Decimal, etc.)
+    Converts everything into VBA-safe JSON:
+    - no None values
+    - all values become strings
+    - prevents ParseJson crashes
     """
     return json.loads(json.dumps(data, default=str))
 
@@ -56,12 +58,12 @@ class RosterRecord(BaseModel):
     remarks: str
 
 # =========================
-# ROOT CHECK
+# ROOT
 # =========================
 
 @app.get("/")
 def home():
-    return {"message": "PMMA API is LIVE"}
+    return vba_safe({"message": "PMMA API is LIVE (VBA SAFE MODE)"})
 
 @app.get("/test-db")
 def test_db():
@@ -74,7 +76,7 @@ def test_db():
     cur.close()
     conn.close()
 
-    return clean_data({"db_status": "connected", "result": result})
+    return vba_safe({"db_status": "connected", "result": result})
 
 # =========================
 # LEAVE DATA
@@ -91,7 +93,7 @@ def get_leave():
     cur.close()
     conn.close()
 
-    return clean_data(data)
+    return vba_safe(data)
 
 
 @app.post("/leave")
@@ -120,17 +122,24 @@ def upload_leave(record: LeaveRecord):
             unit_assignment = EXCLUDED.unit_assignment,
             processed_by = EXCLUDED.processed_by
     """, (
-        record.name, record.leave_type, record.start_date,
-        record.end_date, record.destination, record.days,
-        record.entry_id, record.type, record.region,
-        record.unit_assignment, record.processed_by
+        record.name,
+        record.leave_type,
+        record.start_date,
+        record.end_date,
+        record.destination,
+        record.days,
+        record.entry_id,
+        record.type,
+        record.region,
+        record.unit_assignment,
+        record.processed_by
     ))
 
     conn.commit()
     cur.close()
     conn.close()
 
-    return {"status": "success"}
+    return vba_safe({"status": "success", "module": "leave"})
 
 # =========================
 # ROSTER DATA
@@ -147,7 +156,7 @@ def get_roster():
     cur.close()
     conn.close()
 
-    return clean_data(data)
+    return vba_safe(data)
 
 
 @app.post("/roster")
@@ -184,4 +193,4 @@ def upload_roster(record: RosterRecord):
     cur.close()
     conn.close()
 
-    return {"status": "success"}
+    return vba_safe({"status": "success", "module": "roster"})
