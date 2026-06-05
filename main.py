@@ -22,7 +22,17 @@ def get_conn():
 # =========================
 
 def vba_safe(data):
-    return json.loads(json.dumps(data, default=str))
+
+    if isinstance(data, list):
+        return [vba_safe(item) for item in data]
+
+    if isinstance(data, dict):
+        return {k: vba_safe(v) for k, v in data.items()}
+
+    if data is None:
+        return ""
+
+    return str(data)
 
 # =========================
 # MODELS
