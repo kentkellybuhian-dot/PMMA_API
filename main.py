@@ -18,16 +18,10 @@ def get_conn():
     return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
 # =========================
-# VBA-PROOF CLEANER (CORE UPGRADE)
+# VBA SAFE CLEANER
 # =========================
 
 def vba_safe(data):
-    """
-    Converts everything into VBA-safe JSON:
-    - no None values
-    - all values become strings
-    - prevents ParseJson crashes
-    """
     return json.loads(json.dumps(data, default=str))
 
 # =========================
@@ -79,7 +73,7 @@ def test_db():
     return vba_safe({"db_status": "connected", "result": result})
 
 # =========================
-# LEAVE DATA
+# LEAVE DATA (FIXED)
 # =========================
 
 @app.get("/leave")
@@ -87,17 +81,21 @@ def get_leave():
     conn = get_conn()
     cur = conn.cursor()
 
-    cur.execute("SELECT * SELECT id, name, leave_type, start_date, end_date, entry_id 
-FROM leave_data
-ORDER BY id DESC
-LIMIT 5000")
+    cur.execute("""
+        SELECT id, name, leave_type, start_date, end_date,
+               destination, days, entry_id, type,
+               region, unit_assignment, processed_by
+        FROM leave_data
+        ORDER BY id DESC
+        LIMIT 5000
+    """)
+
     data = cur.fetchall()
 
     cur.close()
     conn.close()
 
     return vba_safe(data)
-
 
 @app.post("/leave")
 def upload_leave(record: LeaveRecord):
@@ -153,14 +151,21 @@ def get_roster():
     conn = get_conn()
     cur = conn.cursor()
 
-    cur.execute("SELECT * FROM roster_data ORDER BY id")
+    cur.execute("""
+        SELECT id, name, date_assigned, date_relieved,
+               unit_assigned, previous_unit,
+               authority, remarks
+        FROM roster_data
+        ORDER BY id DESC
+        LIMIT 5000
+    """)
+
     data = cur.fetchall()
 
     cur.close()
     conn.close()
 
     return vba_safe(data)
-
 
 @app.post("/roster")
 def upload_roster(record: RosterRecord):
